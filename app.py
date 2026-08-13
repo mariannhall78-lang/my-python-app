@@ -1,11 +1,11 @@
 import os
-from flask import Flask, send_from_directory, render_template
+from flask import Flask, render_template, send_from_directory
 
 AZURE_ROOT = "/home/site/wwwroot"
-STATIC_DIR = os.path.join(AZURE_ROOT, "static")
 TEMPLATE_DIR = os.path.join(AZURE_ROOT, "templates")
+STATIC_DIR = os.path.join(AZURE_ROOT, "static")
 
-app = Flask(__name__, static_folder=STATIC_DIR, template_folder=TEMPLATE_DIR)
+app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
 
 @app.route("/")
 def home():
@@ -16,4 +16,4 @@ def files(filename):
     return send_from_directory(AZURE_ROOT, filename)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
