@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} – FoodDB{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{{ url_for('products') }}">Products</a></li>
+    <li class="breadcrumb-item active">{{ product.name }}</li>
+  </ol>
+</nav>
+
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <h3 class="card-title">{{ product.name }}</h3>
+        <p class="text-muted mb-4">{{ product.brand or "" }}</p>
+        <dl class="row">
+          <dt class="col-sm-4">Barcode</dt>
+          <dd class="col-sm-8 font-monospace">{{ product.barcode }}</dd>
+
+          <dt class="col-sm-4">Category</dt>
+          <dd class="col-sm-8">{{ product.category or "—" }}</dd>
+
+          <dt class="col-sm-4">Calories</dt>
+          <dd class="col-sm-8">{{ product.calories if product.calories is not none else "—" }} kcal</dd>
+
+          <dt class="col-sm-4">Weight</dt>
+          <dd class="col-sm-8">{{ product.weight_g if product.weight_g is not none else "—" }} g</dd>
+
+          <dt class="col-sm-4">Added</dt>
+          <dd class="col-sm-8 text-muted small">{{ product.created_at.strftime("%Y-%m-%d %H:%M") if product.created_at else "—" }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 d-flex flex-column gap-3">
+    <a href="{{ url_for('products') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back to Products</a>
+    <a href="{{ url_for('scan') }}" class="btn btn-outline-success"><i class="bi bi-camera me-1"></i>Scan Another</a>
+  </div>
+</div>
+{% endblock %}
