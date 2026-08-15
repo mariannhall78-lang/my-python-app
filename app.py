@@ -12,7 +12,7 @@ STATIC_DIR = os.path.join(BASE_DIR, "static")
 
 _DEFAULT_SECRET = "change-me-in-production"
 _secret_key = os.environ.get("SECRET_KEY", _DEFAULT_SECRET)
-if _secret_key == _DEFAULT_SECRET and not os.environ.get("FLASK_DEBUG"):
+if _secret_key == _DEFAULT_SECRET:
     import warnings
     warnings.warn(
         "SECRET_KEY is not set. Set the SECRET_KEY environment variable before deploying.",
@@ -97,7 +97,7 @@ def product_detail(barcode):
     return render_template("product_detail.html", product=product)
 
 
-def _parse_positive_float(value):
+def _parse_nonnegative_float(value):
     """Return a non-negative float or None; raises ValueError on bad input."""
     if not value:
         return None
@@ -119,8 +119,8 @@ def add_product():
             flash("A product with that barcode already exists.", "warning")
             return render_template("add_product.html", form=request.form)
         try:
-            calories = _parse_positive_float(request.form.get("calories"))
-            weight_g = _parse_positive_float(request.form.get("weight_g"))
+            calories = _parse_nonnegative_float(request.form.get("calories"))
+            weight_g = _parse_nonnegative_float(request.form.get("weight_g"))
         except ValueError:
             flash("Calories and weight must be non-negative numbers.", "danger")
             return render_template("add_product.html", form=request.form)
