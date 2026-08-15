@@ -9,6 +9,10 @@ const resultDiv = document.getElementById('result');
 let stream = null;
 let scanInterval = null;
 
+function escHtml(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 async function lookupBarcode(barcode) {
   barcode = barcode.trim();
   if (!barcode) return;
@@ -19,19 +23,27 @@ async function lookupBarcode(barcode) {
       const data = await res.json();
       if (data.found) {
         const p = data.product;
-        resultDiv.innerHTML = `
-          <div class="alert alert-success">
-            <strong>${p.name}</strong><br>
-            <span class="text-muted">${p.brand || ''} ${p.category ? '· ' + p.category : ''}</span><br>
-            <span class="small font-monospace">${p.barcode}</span><br>
-            <a href="/products/${encodeURIComponent(p.barcode)}" class="btn btn-sm btn-success mt-2">View Details</a>
-          </div>`;
+        const detail = document.createElement('div');
+        detail.className = 'alert alert-success';
+        detail.innerHTML = `<strong>${escHtml(p.name)}</strong><br>
+          <span class="text-muted">${escHtml(p.brand || '')} ${p.category ? '· ' + escHtml(p.category) : ''}</span><br>
+          <span class="small font-monospace">${escHtml(p.barcode)}</span>`;
+        const link = document.createElement('a');
+        link.href = `/products/${encodeURIComponent(p.barcode)}`;
+        link.className = 'btn btn-sm btn-success mt-2';
+        link.textContent = 'View Details';
+        detail.appendChild(link);
+        resultDiv.replaceChildren(detail);
       } else {
-        resultDiv.innerHTML = `
-          <div class="alert alert-warning">
-            Barcode <code>${barcode}</code> not found in database.<br>
-            <a href="/products/add?barcode=${encodeURIComponent(barcode)}" class="btn btn-sm btn-outline-success mt-2">Add this product</a>
-          </div>`;
+        const warn = document.createElement('div');
+        warn.className = 'alert alert-warning';
+        warn.innerHTML = `Barcode <code>${escHtml(barcode)}</code> not found in database.`;
+        const link = document.createElement('a');
+        link.href = `/products/add?barcode=${encodeURIComponent(barcode)}`;
+        link.className = 'btn btn-sm btn-outline-success mt-2';
+        link.textContent = 'Add this product';
+        warn.appendChild(link);
+        resultDiv.replaceChildren(warn);
       }
     }
   } catch (e) {
