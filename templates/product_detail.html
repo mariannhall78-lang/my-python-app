@@ -9,11 +9,17 @@
 </nav>
 
 <div class="row g-4">
-  <div class="col-md-6">
+  <div class="col-lg-8">
     <div class="card shadow-sm h-100">
       <div class="card-body">
-        <h3 class="card-title">{{ product.name }}</h3>
-        <p class="text-muted mb-4">{{ product.brand or "" }}</p>
+        <div class="d-flex flex-column flex-md-row justify-content-between gap-3 mb-4">
+          <div>
+            <span class="eyebrow text-success-emphasis">Product Detail</span>
+            <h1 class="h2 card-title mb-1">{{ product.name }}</h1>
+            <p class="text-muted mb-0">{{ product.brand or "No brand listed" }}</p>
+          </div>
+          <span class="badge rounded-pill text-bg-light align-self-start px-3 py-2">{{ product.category or "Uncategorised" }}</span>
+        </div>
         <dl class="row">
           <dt class="col-sm-4">Barcode</dt>
           <dd class="col-sm-8 font-monospace">{{ product.barcode }}</dd>
@@ -33,9 +39,14 @@
       </div>
     </div>
   </div>
-  <div class="col-md-3 d-flex flex-column gap-3">
-    <a href="{{ url_for('products') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back to Products</a>
-    <a href="{{ url_for('scan') }}" class="btn btn-outline-success"><i class="bi bi-camera me-1"></i>Scan Another</a>
+  <div class="col-lg-4 d-flex flex-column gap-3">
+    <div class="card shadow-sm">
+      <div class="card-body d-grid gap-2">
+        <a href="{{ url_for('products') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back to Products</a>
+        <a href="{{ url_for('scan') }}" class="btn btn-outline-success"><i class="bi bi-camera me-1"></i>Scan Another</a>
+        <a href="{{ url_for('add_product') }}" class="btn btn-success"><i class="bi bi-plus-circle me-1"></i>Add New Product</a>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}
