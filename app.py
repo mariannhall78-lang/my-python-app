@@ -1,5 +1,6 @@
 import os
-from flask import Flask, render_template, send_from_directory, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask_wtf.csrf import CSRFProtect
 from extensions import db
 from models import Product
 from sqlalchemy import func
@@ -9,14 +10,41 @@ BASE_DIR = AZURE_ROOT if os.path.isdir(AZURE_ROOT) else os.path.dirname(os.path.
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 
+_DEFAULT_SECRET = "change-me-in-production"
+_secret_key = os.environ.get("SECRET_KEY", _DEFAULT_SECRET)
+if _secret_key == _DEFAULT_SECRET and not os.environ.get("FLASK_DEBUG"):
+    import warnings
+    warnings.warn(
+        "SECRET_KEY is not set. Set the SECRET_KEY environment variable before deploying.",
+        stacklevel=1,
+    )
+
 app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
     "DATABASE_URL", f"sqlite:///{os.path.join(BASE_DIR, 'products.db')}"
 )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.secret_key = os.environ.get("SECRET_KEY", "change-me-in-production")
+app.config["WTF_CSRF_TIME_LIMIT"] = 3600
+app.secret_key = _secret_key
 
+csrf = CSRFProtect(app)
 db.init_app(app)
+
+
+@app.after_request
+def set_security_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' https://cdn.jsdelivr.net; "
+        "style-src 'self' https://cdn.jsdelivr.net; "
+        "font-src 'self' https://cdn.jsdelivr.net; "
+        "img-src 'self' data:; "
+        "connect-src 'self'"
+    )
+    return response
 
 
 @app.before_request
@@ -69,6 +97,16 @@ def product_detail(barcode):
     return render_template("product_detail.html", product=product)
 
 
+def _parse_positive_float(value):
+    """Return a non-negative float or None; raises ValueError on bad input."""
+    if not value:
+        return None
+    f = float(value)
+    if f < 0:
+        raise ValueError("Value must be non-negative")
+    return f
+
+
 @app.route("/products/add", methods=["GET", "POST"])
 def add_product():
     if request.method == "POST":
@@ -80,13 +118,19 @@ def add_product():
         if Product.query.filter_by(barcode=barcode).first():
             flash("A product with that barcode already exists.", "warning")
             return render_template("add_product.html", form=request.form)
+        try:
+            calories = _parse_positive_float(request.form.get("calories"))
+            weight_g = _parse_positive_float(request.form.get("weight_g"))
+        except ValueError:
+            flash("Calories and weight must be non-negative numbers.", "danger")
+            return render_template("add_product.html", form=request.form)
         product = Product(
             barcode=barcode,
             name=name,
             brand=request.form.get("brand", "").strip() or None,
             category=request.form.get("category", "").strip() or None,
-            calories=float(request.form["calories"]) if request.form.get("calories") else None,
-            weight_g=float(request.form["weight_g"]) if request.form.get("weight_g") else None,
+            calories=calories,
+            weight_g=weight_g,
         )
         db.session.add(product)
         db.session.commit()
@@ -106,11 +150,6 @@ def api_barcode(barcode):
     if product:
         return jsonify({"found": True, "product": product.to_dict()})
     return jsonify({"found": False, "barcode": barcode}), 404
-
-
-@app.route("/files/<path:filename>")
-def files(filename):
-    return send_from_directory(BASE_DIR, filename)
 
 
 if __name__ == "__main__":
